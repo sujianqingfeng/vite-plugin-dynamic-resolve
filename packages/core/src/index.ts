@@ -8,7 +8,7 @@ const debug = createDebug("vite-plugin-dynamic-resolve")
 
 interface Options {}
 
-const exists = async (filePath) =>
+const exists = async (filePath: string) =>
   await fs.promises
     .access(filePath)
     .then(() => true)
@@ -28,7 +28,7 @@ function PluginDynamicResolve(): Plugin {
   return <Plugin>{
     name: "vite-plugin-dynamic-resolve",
     // enforce: "post",
-    async transform(source, id, options) {
+    async transform(source, id) {
       if (filter(id)) {
         debug("-------------")
         debug("importer | ", id)

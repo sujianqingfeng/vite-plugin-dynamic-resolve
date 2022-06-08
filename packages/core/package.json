@@ -1,0 +1,38 @@
+{
+  "name": "vite-plugin-dynamic-resolve",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "unbuild",
+    "stub": "unbuild --stub",
+    "prepublishOnly": "npm run build",
+    "prepack": "pnpm unbuild"
+  },
+  "peerDependencies": {
+    "vite": ">=2.0.0"
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^4.2.1",
+    "debug": "^4.3.4",
+    "unbuild": "^0.7.4"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.7"
+  },
+  "license": "MIT"
+}

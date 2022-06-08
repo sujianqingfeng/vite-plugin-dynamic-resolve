@@ -1,13 +1,12 @@
 import { defineConfig } from "vite"
-import vue from "@vitejs/plugin-vue"
+import Vue from "@vitejs/plugin-vue"
 import Inspect from "vite-plugin-inspect"
+import DynamicResolve from "vite-plugin-dynamic-resolve"
+
 import path from "path"
 
-import DynamicResolve from "../plugin/index"
-
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [Inspect(), DynamicResolve(), vue()],
+  plugins: [Inspect(), DynamicResolve(), Vue()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

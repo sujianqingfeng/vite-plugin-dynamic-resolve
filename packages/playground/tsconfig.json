@@ -12,16 +12,11 @@
     "esModuleInterop": true,
     "lib": ["esnext", "dom"],
     "skipLibCheck": true,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
-      "@*": ["example/src/*"]
+      "@*": ["src/*"]
     }
   },
-  "include": [
-    "example/src/**/*.ts",
-    "example/src/**/*.d.ts",
-    "example/src/**/*.tsx",
-    "example/src/**/*.vue"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
