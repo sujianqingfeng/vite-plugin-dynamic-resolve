@@ -6,7 +6,12 @@ import type { Plugin } from "vite"
 
 const debug = createDebug("vite-plugin-dynamic-resolve")
 
-interface Options {}
+export interface Options {
+  entryName?: string
+  extensions?: string[]
+  exclude?: RegExp[]
+  replaces: string[]
+}
 
 const exists = async (filePath: string) =>
   await fs.promises
@@ -14,16 +19,18 @@ const exists = async (filePath: string) =>
     .then(() => true)
     .catch((_) => false)
 
-function PluginDynamicResolve(): Plugin {
-  const entryName = "index"
-  const extensions = [".vue", ".ts"]
+function PluginDynamicResolve(options: Options): Plugin {
+  const {
+    entryName = "index",
+    extensions = [".vue", ".ts", ".module.css"],
+    exclude = [/[\\/]node_modules[\\/]/],
+    replaces = [],
+  } = options
 
   const include = extensions.map((ext) => new RegExp(`${entryName}${ext}`))
-  const exclude = [/[\\/]node_modules[\\/]/]
-
-  const replaces = ["other"]
 
   const filter = createFilter(include, exclude)
+  const cssExtNames = [".css"]
 
   return <Plugin>{
     name: "vite-plugin-dynamic-resolve",
@@ -35,13 +42,16 @@ function PluginDynamicResolve(): Plugin {
         debug("source | ", source)
         debug("-------------")
 
-        const extName = path.extname(id)
+        let extName = path.extname(id)
         const parentDir = path.resolve(id, "..")
-        debug(parentDir, extName)
+        // debug(parentDir, extName)
 
         for (const re of replaces) {
+          if (cssExtNames.includes(extName)) {
+            extName = `.module${extName}`
+          }
           const p = `${parentDir}/${re}${extName}`
-          debug("re path", p)
+          // debug("re path", p)
           const isExist = await exists(p)
           if (isExist) {
             debug("isExist", p)
