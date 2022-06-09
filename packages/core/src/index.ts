@@ -4,6 +4,8 @@ import createDebug from "debug"
 import { createFilter } from "@rollup/pluginutils"
 import type { Plugin } from "vite"
 
+import { optimize as optimizeSvg, OptimizedSvg } from "svgo"
+
 const debug = createDebug("vite-plugin-dynamic-resolve")
 
 export interface Options {
@@ -22,7 +24,7 @@ const exists = async (filePath: string) =>
 function PluginDynamicResolve(options: Options): Plugin {
   const {
     entryName = "index",
-    extensions = [".vue", ".ts", ".module.css"],
+    extensions = [".vue", ".ts", ".module.css", ".png", ".svg"],
     exclude = [/[\\/]node_modules[\\/]/],
     replaces = [],
   } = options
@@ -31,10 +33,12 @@ function PluginDynamicResolve(options: Options): Plugin {
 
   const filter = createFilter(include, exclude)
   const cssExtNames = [".css"]
+  const resourceExtNames = [".png"]
+  const svgExtName = ".svg"
 
   return <Plugin>{
     name: "vite-plugin-dynamic-resolve",
-    // enforce: "post",
+    enforce: "pre",
     async transform(source, id) {
       if (filter(id)) {
         debug("-------------")
@@ -55,6 +59,29 @@ function PluginDynamicResolve(options: Options): Plugin {
           const isExist = await exists(p)
           if (isExist) {
             debug("isExist", p)
+
+            if (svgExtName === extName) {
+              const svg = await fs.promises.readFile(id, "utf8")
+
+              const optimizeData = optimizeSvg(svg, {
+                removeDimensions: true,
+              })
+
+              if (optimizeData as OptimizedSvg) {
+                debug(1111111, optimizeData)
+              }
+
+              return source
+            }
+
+            if (resourceExtNames.includes(extName)) {
+              const code = source.replace(
+                `${entryName}${extName}`,
+                `${re}${extName}`
+              )
+              return code
+            }
+
             const code = await fs.promises.readFile(p, "utf8")
             debug("code", code)
             return code

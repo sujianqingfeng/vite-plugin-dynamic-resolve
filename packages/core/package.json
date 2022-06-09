@@ -32,7 +32,9 @@
     "unbuild": "^0.7.4"
   },
   "devDependencies": {
-    "@types/debug": "^4.1.7"
+    "@types/debug": "^4.1.7",
+    "@types/svgo": "^2.6.3",
+    "svgo": "^2.8.0"
   },
   "license": "MIT"
 }
