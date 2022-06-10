@@ -18,6 +18,7 @@
     "vite": "^2.9.9",
     "vite-plugin-dynamic-resolve": "workspace:*",
     "vite-plugin-inspect": "^0.5.0",
+    "vite-svg-loader": "^3.3.0",
     "vue-tsc": "^0.34.7"
   },
   "license": "MIT"

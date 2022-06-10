@@ -3,8 +3,10 @@ import path from "path"
 import createDebug from "debug"
 import { createFilter } from "@rollup/pluginutils"
 import type { Plugin } from "vite"
-
 import { optimize as optimizeSvg, OptimizedSvg } from "svgo"
+import { compileTemplate, parse } from "@vue/compiler-sfc"
+
+import { template } from "./template"
 
 const debug = createDebug("vite-plugin-dynamic-resolve")
 
@@ -64,11 +66,36 @@ function PluginDynamicResolve(options: Options): Plugin {
               const svg = await fs.promises.readFile(id, "utf8")
 
               const optimizeData = optimizeSvg(svg, {
-                removeDimensions: true,
+                plugins: [
+                  "removeUselessStrokeAndFill",
+                  "removeXMLNS",
+                  "removeViewBox",
+                  "removeDimensions",
+                ],
               })
-
-              if (optimizeData as OptimizedSvg) {
+              if (!optimizeData.error) {
                 debug(1111111, optimizeData)
+                const simpleSvg = (optimizeData as OptimizedSvg).data
+
+                const removeSvgTag = /<svg.+?>(.+)<\/svg>/.exec(simpleSvg)
+
+                debug(4444, removeSvgTag)
+
+                if (removeSvgTag && removeSvgTag.length > 1) {
+                  const component = template.replace("###", simpleSvg)
+                  const ddd = parse(component)
+                  debug(555, ddd)
+
+                  const { code } = compileTemplate({
+                    id: JSON.stringify(id),
+                    source: component,
+                    filename: id,
+                    transformAssetUrls: false,
+                  })
+                  debug(3333, code)
+
+                  return `${code}\nexport default { render: render }`
+                }
               }
 
               return source
