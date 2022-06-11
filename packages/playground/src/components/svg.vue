@@ -7,5 +7,5 @@ import MyIcon  from '../assets/index.svg'
 <template>
 <p>svg 测试</p>
 
-<MyIcon  />
+<MyIcon size="3" color="red"  />
 </template>

@@ -4,7 +4,7 @@ import createDebug from "debug"
 import { createFilter } from "@rollup/pluginutils"
 import type { Plugin } from "vite"
 import { optimize as optimizeSvg, OptimizedSvg } from "svgo"
-import { compileTemplate, parse } from "@vue/compiler-sfc"
+import { compileTemplate, parse, compileScript } from "@vue/compiler-sfc"
 
 import { template } from "./template"
 
@@ -63,7 +63,7 @@ function PluginDynamicResolve(options: Options): Plugin {
             debug("isExist", p)
 
             if (svgExtName === extName) {
-              const svg = await fs.promises.readFile(id, "utf8")
+              const svg = await fs.promises.readFile(p, "utf8")
 
               const optimizeData = optimizeSvg(svg, {
                 plugins: [
@@ -75,27 +75,42 @@ function PluginDynamicResolve(options: Options): Plugin {
               })
               if (!optimizeData.error) {
                 debug(1111111, optimizeData)
-                const simpleSvg = (optimizeData as OptimizedSvg).data
+                let simpleSvg = (optimizeData as OptimizedSvg).data
 
-                const removeSvgTag = /<svg.+?>(.+)<\/svg>/.exec(simpleSvg)
+                simpleSvg = simpleSvg.replace(
+                  "<svg",
+                  `<svg :style="{color:color,width:size+'em',height:size+'em',fill:'currentColor',overflow: 'hidden'}"`
+                )
 
-                debug(4444, removeSvgTag)
+                const { code } = compileTemplate({
+                  id: JSON.stringify(id),
+                  source: simpleSvg,
+                  filename: id,
+                  transformAssetUrls: false,
+                })
+                debug(3333, code)
 
-                if (removeSvgTag && removeSvgTag.length > 1) {
-                  const component = template.replace("###", simpleSvg)
-                  const ddd = parse(component)
-                  debug(555, ddd)
+                // return `${code}\nexport default { render: render }`
 
-                  const { code } = compileTemplate({
-                    id: JSON.stringify(id),
-                    source: component,
-                    filename: id,
-                    transformAssetUrls: false,
-                  })
-                  debug(3333, code)
+                return `
+                  ${code}\n
+                  import { defineComponent, h } from "vue"
 
-                  return `${code}\nexport default { render: render }`
-                }
+export default defineComponent({
+  name: "test",
+  props: {
+    color: {
+      type: String,
+      default: "red",
+    },
+    size:{
+      type:String,
+      default:"1"
+    }
+  },
+  render,
+})
+                  `
               }
 
               return source
