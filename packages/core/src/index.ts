@@ -3,10 +3,7 @@ import path from "path"
 import createDebug from "debug"
 import { createFilter } from "@rollup/pluginutils"
 import type { Plugin } from "vite"
-import { optimize as optimizeSvg, OptimizedSvg } from "svgo"
-import { compileTemplate, parse, compileScript } from "@vue/compiler-sfc"
-
-import { template } from "./template"
+import { transformSvg } from "./svg"
 
 const debug = createDebug("vite-plugin-dynamic-resolve")
 
@@ -15,6 +12,7 @@ export interface Options {
   extensions?: string[]
   exclude?: RegExp[]
   replaces: string[]
+  enable?: boolean
 }
 
 const exists = async (filePath: string) =>
@@ -29,6 +27,7 @@ function PluginDynamicResolve(options: Options): Plugin {
     extensions = [".vue", ".ts", ".module.css", ".png", ".svg"],
     exclude = [/[\\/]node_modules[\\/]/],
     replaces = [],
+    enable = true,
   } = options
 
   const include = extensions.map((ext) => new RegExp(`${entryName}${ext}`))
@@ -38,10 +37,23 @@ function PluginDynamicResolve(options: Options): Plugin {
   const resourceExtNames = [".png"]
   const svgExtName = ".svg"
 
+  const isSvg = (extName: string) => svgExtName === extName
+  const isResource = (extName: string) => resourceExtNames.includes(extName)
+
   return <Plugin>{
     name: "vite-plugin-dynamic-resolve",
     enforce: "pre",
     async transform(source, id) {
+      // 关闭 保留svg
+      if (!enable) {
+        let extName = path.extname(id)
+
+        if (isSvg(extName)) {
+          return await transformSvg(id)
+        }
+        return null
+      }
+
       if (filter(id)) {
         debug("-------------")
         debug("importer | ", id)
@@ -57,66 +69,17 @@ function PluginDynamicResolve(options: Options): Plugin {
             extName = `.module${extName}`
           }
           const p = `${parentDir}/${re}${extName}`
-          // debug("re path", p)
+
           const isExist = await exists(p)
+
           if (isExist) {
             debug("isExist", p)
 
-            if (svgExtName === extName) {
-              const svg = await fs.promises.readFile(p, "utf8")
-
-              const optimizeData = optimizeSvg(svg, {
-                plugins: [
-                  "removeUselessStrokeAndFill",
-                  "removeXMLNS",
-                  "removeViewBox",
-                  "removeDimensions",
-                ],
-              })
-              if (!optimizeData.error) {
-                debug(1111111, optimizeData)
-                let simpleSvg = (optimizeData as OptimizedSvg).data
-
-                simpleSvg = simpleSvg.replace(
-                  "<svg",
-                  `<svg :style="{color:color,width:size+'em',height:size+'em',fill:'currentColor',overflow: 'hidden'}"`
-                )
-
-                const { code } = compileTemplate({
-                  id: JSON.stringify(id),
-                  source: simpleSvg,
-                  filename: id,
-                  transformAssetUrls: false,
-                })
-                debug(3333, code)
-
-                // return `${code}\nexport default { render: render }`
-
-                return `
-                  ${code}\n
-                  import { defineComponent, h } from "vue"
-
-export default defineComponent({
-  name: "test",
-  props: {
-    color: {
-      type: String,
-      default: "red",
-    },
-    size:{
-      type:String,
-      default:"1"
-    }
-  },
-  render,
-})
-                  `
-              }
-
-              return source
+            if (isSvg(extName)) {
+              return await transformSvg(p)
             }
 
-            if (resourceExtNames.includes(extName)) {
+            if (isResource(extName)) {
               const code = source.replace(
                 `${entryName}${extName}`,
                 `${re}${extName}`
@@ -127,6 +90,11 @@ export default defineComponent({
             const code = await fs.promises.readFile(p, "utf8")
             debug("code", code)
             return code
+          } else {
+            // 不存在 单独处理一下svg
+            if (isSvg(extName)) {
+              return await transformSvg(id)
+            }
           }
         }
       }
