@@ -43,6 +43,15 @@ function PluginDynamicResolve(options: Options): Plugin {
   return <Plugin>{
     name: "vite-plugin-dynamic-resolve",
     enforce: "pre",
+    async load(id, options) {
+      // if (id.includes("index.png")) {
+      //   const p = id.replace("index.png", "other.png")
+      //   const code = await this.resolve(p)
+      //   console.log(222222, code)
+      //   return code
+      // }
+    },
+
     async transform(source, id) {
       // 关闭 保留svg
       if (!enable) {
@@ -55,10 +64,10 @@ function PluginDynamicResolve(options: Options): Plugin {
       }
 
       if (filter(id)) {
-        debug("-------------")
-        debug("importer | ", id)
-        debug("source | ", source)
-        debug("-------------")
+        // debug("-------------")
+        // debug("importer | ", id)
+        // debug("source | ", source)
+        // debug("-------------")
 
         let extName = path.extname(id)
         const parentDir = path.resolve(id, "..")
@@ -73,7 +82,7 @@ function PluginDynamicResolve(options: Options): Plugin {
           const isExist = await exists(p)
 
           if (isExist) {
-            debug("isExist", p)
+            // debug("isExist", p)
 
             if (isSvg(extName)) {
               return await transformSvg(p)
@@ -88,7 +97,7 @@ function PluginDynamicResolve(options: Options): Plugin {
             }
 
             const code = await fs.promises.readFile(p, "utf8")
-            debug("code", code)
+            // debug("code", code)
             return code
           } else {
             // 不存在 单独处理一下svg

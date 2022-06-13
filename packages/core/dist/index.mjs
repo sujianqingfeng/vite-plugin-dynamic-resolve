@@ -5,7 +5,7 @@ import { createFilter } from '@rollup/pluginutils';
 import { optimize } from 'svgo';
 import { compileTemplate } from '@vue/compiler-sfc';
 
-const debug$1 = createDebug("transformSvg");
+createDebug("transformSvg");
 async function transformSvg(path) {
   const svg = await fs.promises.readFile(path, "utf8");
   const optimizeData = optimize(svg, {
@@ -17,7 +17,6 @@ async function transformSvg(path) {
     ]
   });
   if (!optimizeData.error) {
-    debug$1(1111111, optimizeData);
     let simpleSvg = optimizeData.data;
     simpleSvg = simpleSvg.replace("<svg", `<svg :style="{color:color,width:size+'em',height:size+'em',fill:'currentColor',overflow: 'hidden'}"`);
     const { code } = compileTemplate({
@@ -26,7 +25,6 @@ async function transformSvg(path) {
       filename: path,
       transformAssetUrls: false
     });
-    debug$1(3333, code);
     return `
           ${code}
 
@@ -49,7 +47,7 @@ async function transformSvg(path) {
   }
 }
 
-const debug = createDebug("vite-plugin-dynamic-resolve");
+createDebug("vite-plugin-dynamic-resolve");
 const exists = async (filePath) => await fs.promises.access(filePath).then(() => true).catch((_) => false);
 function PluginDynamicResolve(options) {
   const {
@@ -69,6 +67,14 @@ function PluginDynamicResolve(options) {
   return {
     name: "vite-plugin-dynamic-resolve",
     enforce: "pre",
+    async load(id, options2) {
+      if (id.includes("index.png")) {
+        const p = id.replace("index.png", "other.png");
+        const code = await this.resolve(p);
+        console.log(222222, code);
+        return code;
+      }
+    },
     async transform(source, id) {
       if (!enable) {
         let extName = path.extname(id);
@@ -78,10 +84,6 @@ function PluginDynamicResolve(options) {
         return null;
       }
       if (filter(id)) {
-        debug("-------------");
-        debug("importer | ", id);
-        debug("source | ", source);
-        debug("-------------");
         let extName = path.extname(id);
         const parentDir = path.resolve(id, "..");
         for (const re of replaces) {
@@ -91,7 +93,6 @@ function PluginDynamicResolve(options) {
           const p = `${parentDir}/${re}${extName}`;
           const isExist = await exists(p);
           if (isExist) {
-            debug("isExist", p);
             if (isSvg(extName)) {
               return await transformSvg(p);
             }
@@ -100,7 +101,6 @@ function PluginDynamicResolve(options) {
               return code2;
             }
             const code = await fs.promises.readFile(p, "utf8");
-            debug("code", code);
             return code;
           } else {
             if (isSvg(extName)) {

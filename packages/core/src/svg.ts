@@ -17,7 +17,7 @@ export async function transformSvg(path: string) {
     ],
   })
   if (!optimizeData.error) {
-    debug(1111111, optimizeData)
+    // debug(1111111, optimizeData)
     let simpleSvg = (optimizeData as OptimizedSvg).data
 
     simpleSvg = simpleSvg.replace(
@@ -31,7 +31,7 @@ export async function transformSvg(path: string) {
       filename: path,
       transformAssetUrls: false,
     })
-    debug(3333, code)
+    // debug(3333, code)
 
     return `
           ${code}\n
