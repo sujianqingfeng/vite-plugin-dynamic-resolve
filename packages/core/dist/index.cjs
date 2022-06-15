@@ -81,9 +81,7 @@ function PluginDynamicResolve(options) {
     name: "vite-plugin-dynamic-resolve",
     enforce: "pre",
     async generateBundle() {
-      console.log("generateBundle");
       for (const [fileName, p] of resourceMap.entries()) {
-        console.log(p, fileName);
         this.emitFile({
           fileName,
           type: "asset",
