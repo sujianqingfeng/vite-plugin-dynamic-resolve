@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     Inspect(),
     DynamicResolve({
-      enable: false,
+      enable: true,
       replaces: ["other"],
     }),
     Vue(),
