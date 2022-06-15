@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import createDebug from 'debug';
 import { createFilter } from '@rollup/pluginutils';
+import { createHash } from 'crypto';
 import { optimize } from 'svgo';
 import { compileTemplate } from '@vue/compiler-sfc';
 
@@ -49,6 +50,9 @@ async function transformSvg(path) {
 
 createDebug("vite-plugin-dynamic-resolve");
 const exists = async (filePath) => await fs.promises.access(filePath).then(() => true).catch((_) => false);
+function getHash(text) {
+  return createHash("sha256").update(text).digest("hex").substring(0, 8);
+}
 function PluginDynamicResolve(options) {
   const {
     entryName = "index",
@@ -64,15 +68,19 @@ function PluginDynamicResolve(options) {
   const svgExtName = ".svg";
   const isSvg = (extName) => svgExtName === extName;
   const isResource = (extName) => resourceExtNames.includes(extName);
+  const resourceMap = /* @__PURE__ */ new Map();
   return {
     name: "vite-plugin-dynamic-resolve",
     enforce: "pre",
-    async load(id, options2) {
-      if (id.includes("index.png")) {
-        const p = id.replace("index.png", "other.png");
-        const code = await this.resolve(p);
-        console.log(222222, code);
-        return code;
+    async generateBundle() {
+      console.log("generateBundle");
+      for (const [fileName, p] of resourceMap.entries()) {
+        console.log(p, fileName);
+        this.emitFile({
+          fileName,
+          type: "asset",
+          source: await fs.promises.readFile(p)
+        });
       }
     },
     async transform(source, id) {
@@ -98,6 +106,9 @@ function PluginDynamicResolve(options) {
             }
             if (isResource(extName)) {
               const code2 = source.replace(`${entryName}${extName}`, `${re}${extName}`);
+              const temp = await fs.promises.readFile(id);
+              const hash = getHash(temp);
+              resourceMap.set(`assets/${entryName}.${hash}${extName}`, p);
               return code2;
             }
             const code = await fs.promises.readFile(p, "utf8");

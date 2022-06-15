@@ -3,6 +3,8 @@ import path from "path"
 import createDebug from "debug"
 import { createFilter } from "@rollup/pluginutils"
 import type { Plugin } from "vite"
+import { createHash } from "crypto"
+
 import { transformSvg } from "./svg"
 
 const debug = createDebug("vite-plugin-dynamic-resolve")
@@ -20,6 +22,10 @@ const exists = async (filePath: string) =>
     .access(filePath)
     .then(() => true)
     .catch((_) => false)
+
+function getHash(text: Buffer | string): string {
+  return createHash("sha256").update(text).digest("hex").substring(0, 8)
+}
 
 function PluginDynamicResolve(options: Options): Plugin {
   const {
@@ -40,16 +46,19 @@ function PluginDynamicResolve(options: Options): Plugin {
   const isSvg = (extName: string) => svgExtName === extName
   const isResource = (extName: string) => resourceExtNames.includes(extName)
 
+  const resourceMap = new Map()
+
   return <Plugin>{
     name: "vite-plugin-dynamic-resolve",
     enforce: "pre",
-    async load(id, options) {
-      // if (id.includes("index.png")) {
-      //   const p = id.replace("index.png", "other.png")
-      //   const code = await this.resolve(p)
-      //   console.log(222222, code)
-      //   return code
-      // }
+    async generateBundle() {
+      for (const [fileName, p] of resourceMap.entries()) {
+        this.emitFile({
+          fileName,
+          type: "asset",
+          source: await fs.promises.readFile(p),
+        })
+      }
     },
 
     async transform(source, id) {
@@ -93,6 +102,12 @@ function PluginDynamicResolve(options: Options): Plugin {
                 `${entryName}${extName}`,
                 `${re}${extName}`
               )
+
+              const temp = await fs.promises.readFile(id)
+              const hash = getHash(temp)
+              // console.log("hash", hash)
+
+              resourceMap.set(`assets/${entryName}.${hash}${extName}`, p)
               return code
             }
 

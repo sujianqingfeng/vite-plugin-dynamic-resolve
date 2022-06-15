@@ -17,12 +17,14 @@ importers:
       '@types/svgo': ^2.6.3
       '@vue/compiler-sfc': ^3.2.37
       debug: ^4.3.4
+      rollup: ^2.72.1
       svgo: ^2.8.0
       unbuild: ^0.7.4
       vite: ^2.9.9
     dependencies:
       '@rollup/pluginutils': 4.2.1
       debug: 4.3.4
+      rollup: 2.75.5
       unbuild: 0.7.4
     devDependencies:
       '@types/debug': 4.1.7
